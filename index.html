@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Real or AI? — Arcade Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #1a0f2e;
+    --bg2: #0d0818;
+    --panel: #241638;
+    --line: #4a2d6b;
+    --text: #fdf6e3;
+    --amber: #ffb703;
+    --orange: #ff6b35;
+    --blue: #3ec1d3;
+    --pink: #ff4d97;
+    --real: #ff6b35;
+    --ai: #3ec1d3;
+    --wrong: #ff2d55;
+    --pixel: 'Press Start 2P', monospace;
+    --arcade: 'VT323', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 50% 0%, #3a1f5c 0%, var(--bg) 45%, var(--bg2) 100%);
+    color:var(--text);
+    font-family:var(--arcade);
+    padding:28px 16px 56px;
+    position:relative;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.18) 0px,
+      rgba(0,0,0,0.18) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events:none;
+    z-index:50;
+  }
+  .bg-blocks{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    opacity:0.35;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 2px, transparent 2px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 2px, transparent 2px);
+    background-size:32px 32px;
+  }
+
+  header{
+    max-width:640px;
+    margin:0 auto 18px;
+    text-align:center;
+    position:relative;
+    z-index:1;
+  }
+  .marquee{
+    display:inline-block;
+    font-family:var(--pixel);
+    font-size:clamp(16px,4vw,26px);
+    color:var(--amber);
+    text-shadow:
+      3px 3px 0 var(--orange),
+      6px 6px 0 rgba(0,0,0,0.5);
+    letter-spacing:1px;
+    line-height:1.5;
+    margin:0 0 10px;
+  }
+  header p{
+    font-size:18px;
+    color:var(--blue);
+    margin:0;
+  }
+
+  .hud{
+    max-width:640px;
+    margin:0 auto 20px;
+    display:flex;
+    justify-content:center;
+    gap:24px;
+    font-family:var(--pixel);
+    font-size:11px;
+    color:var(--text);
+    flex-wrap:wrap;
+    position:relative;
+    z-index:1;
+  }
+  .hud .box{
+    background:var(--panel);
+    border:2px solid var(--line);
+    padding:8px 14px;
+    border-radius:2px;
+    box-shadow:3px 3px 0 rgba(0,0,0,0.4);
+  }
+  .hud .box span{color:var(--amber);}
+
+  .stage{
+    max-width:520px;
+    margin:0 auto;
+    position:relative;
+    z-index:1;
+  }
+
+  .progress{
+    display:flex;
+    justify-content:center;
+    gap:6px;
+    margin-bottom:16px;
+    flex-wrap:wrap;
+  }
+  .dot{
+    width:10px;
+    height:10px;
+    background:var(--line);
+    border:1px solid var(--bg2);
+  }
+  .dot.done-real{background:var(--real);}
+  .dot.done-ai{background:var(--ai);}
+  .dot.done-wrong{background:var(--wrong);}
+  .dot.current{outline:2px solid var(--amber); outline-offset:2px;}
+
+  .card{
+    perspective:1400px;
+    aspect-ratio:3/4;
+    width:100%;
+  }
+  .card-inner{
+    position:relative;
+    width:100%;
+    height:100%;
+    transform-style:preserve-3d;
+    transition:transform 0.55s cubic-bezier(.4,.2,.2,1);
+  }
+  .card.flipped .card-inner{transform:rotateY(180deg);}
+  .face{
+    position:absolute;
+    inset:0;
+    backface-visibility:hidden;
+    border-radius:6px;
+    overflow:hidden;
+    border:4px solid var(--amber);
+    box-shadow:
+      0 0 0 4px var(--bg2),
+      8px 8px 0 rgba(0,0,0,0.45);
+    display:flex;
+    flex-direction:column;
+    background:var(--panel);
+  }
+  .face-front{
+    cursor:pointer;
+  }
+  .face-front .imgwrap{
+    flex:1;
+    position:relative;
+    overflow:hidden;
+    background:#000;
+  }
+  .face-front img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .face-front .num{
+    position:absolute;
+    top:10px;
+    left:10px;
+    font-family:var(--pixel);
+    font-size:10px;
+    color:var(--bg2);
+    background:var(--amber);
+    padding:4px 8px;
+    border:2px solid var(--bg2);
+    z-index:2;
+  }
+
+  .face-back{
+    transform:rotateY(180deg);
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    padding:24px 18px;
+    gap:14px;
+  }
+  .face-back.is-real{background:linear-gradient(160deg,#3a1810,#241638); border-color:var(--real);}
+  .face-back.is-ai{background:linear-gradient(160deg,#0f2e33,#241638); border-color:var(--ai);}
+  .verdict{
+    font-family:var(--pixel);
+    font-size:clamp(16px,5vw,22px);
+    line-height:1.6;
+  }
+  .is-real .verdict{color:var(--real); text-shadow:2px 2px 0 rgba(0,0,0,0.5);}
+  .is-ai .verdict{color:var(--ai); text-shadow:2px 2px 0 rgba(0,0,0,0.5);}
+  .explain{
+    font-size:19px;
+    color:var(--text);
+    line-height:1.4;
+    max-width:340px;
+  }
+  .result-flag{
+    font-family:var(--pixel);
+    font-size:11px;
+    padding:6px 12px;
+    border:2px solid var(--bg2);
+    display:none;
+  }
+  .result-flag.correct{background:#2ecc71; color:#0d3320;}
+  .result-flag.incorrect{background:var(--wrong); color:#fff;}
+
+  .pick-row{
+    display:flex;
+    gap:10px;
+    padding:14px;
+    background:var(--bg2);
+  }
+  .pick-btn{
+    flex:1;
+    font-family:var(--pixel);
+    font-size:12px;
+    padding:14px 4px;
+    border:3px solid var(--bg2);
+    color:var(--bg2);
+    cursor:pointer;
+    box-shadow:4px 4px 0 rgba(0,0,0,0.5);
+    transition:transform 0.1s;
+  }
+  .pick-btn:active{transform:translate(2px,2px); box-shadow:2px 2px 0 rgba(0,0,0,0.5);}
+  .pick-btn.real-btn{background:var(--real);}
+  .pick-btn.ai-btn{background:var(--blue);}
+  .pick-btn:disabled{opacity:0.5; cursor:default;}
+
+  .nav{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-top:20px;
+  }
+  .nav-btn{
+    font-family:var(--pixel);
+    font-size:12px;
+    background:var(--panel);
+    border:3px solid var(--line);
+    color:var(--amber);
+    padding:14px 16px;
+    cursor:pointer;
+    box-shadow:4px 4px 0 rgba(0,0,0,0.4);
+  }
+  .nav-btn:active{transform:translate(2px,2px); box-shadow:2px 2px 0 rgba(0,0,0,0.4);}
+  .nav-btn:disabled{opacity:0.3; cursor:default;}
+  .nav-mid{
+    font-family:var(--pixel);
+    font-size:11px;
+    color:var(--text);
+    text-align:center;
+  }
+
+  .controls{
+    max-width:520px;
+    margin:26px auto 0;
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    position:relative;
+    z-index:1;
+  }
+  .action{
+    font-family:var(--pixel);
+    font-size:10px;
+    background:var(--bg2);
+    border:2px solid var(--line);
+    color:var(--text);
+    padding:10px 16px;
+    cursor:pointer;
+  }
+  .action:hover{border-color:var(--amber); color:var(--amber);}
+
+  footer{
+    max-width:600px;
+    margin:44px auto 0;
+    font-size:16px;
+    color:var(--blue);
+    text-align:center;
+    line-height:1.6;
+    border-top:2px dashed var(--line);
+    padding-top:18px;
+    position:relative;
+    z-index:1;
+  }
+  footer code{color:var(--amber);}
+
+  @media (max-width:480px){
+    .marquee{font-size:15px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-blocks"></div>
+
+<header>
+  <h1 class="marquee">REAL OR AI?</h1>
+  <p>One card at a time. Guess it, flip it, keep your combo alive.</p>
+</header>
+
+<div class="hud">
+  <div class="box">SCORE <span id="score">0</span></div>
+  <div class="box">CARD <span id="posLabel">1</span>/<span id="totalLabel">20</span></div>
+  <div class="box">STREAK <span id="streak">0</span></div>
+</div>
+
+<div class="stage">
+  <div class="progress" id="progress"></div>
+
+  <div class="card" id="cardEl">
+    <div class="card-inner">
+      <div class="face face-front" id="frontFace">
+        <span class="num" id="cardNum">#1</span>
+        <div class="imgwrap">
+          <img id="cardImg" src="" alt="flashcard">
+        </div>
+        <div class="pick-row">
+          <button class="pick-btn real-btn" id="realBtn">REAL</button>
+          <button class="pick-btn ai-btn" id="aiBtn">AI</button>
+        </div>
+      </div>
+      <div class="face face-back" id="backFace">
+        <div class="verdict" id="verdictText">REAL PHOTO</div>
+        <div class="result-flag" id="resultFlag">CORRECT!</div>
+        <div class="explain" id="explainText"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn" id="prevBtn">&#8592; PREV</button>
+    <div class="nav-mid" id="navMid">GUESS TO FLIP</div>
+    <button class="nav-btn" id="nextBtn">NEXT &#8594;</button>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="action" id="resetBtn">RESTART</button>
+  <button class="action" id="shuffleBtn">SHUFFLE</button>
+</div>
+
+<footer>
+  Placeholder art ships in this build. Open the file and edit the
+  <code>CARDS</code> array at the bottom to drop in your own 20 images —
+  set <code>isAI: true</code> or <code>isAI: false</code> for each one.
+</footer>
+
+<script>
+// ---------------------------------------------------------------
+// CARDS: replace image + isAI + explain for each of the 20 entries.
+// image: any hotlinked URL, or a local path like "images/card1.jpg"
+//        if you host images next to this HTML file.
+// isAI: true = AI-generated image, false = real photo.
+// explain: short line shown on the back of the card.
+// ---------------------------------------------------------------
+const CARDS = [
+  { image: "images/01-snowman.jpeg", isAI: false, explain: "A real snowman photographed on a snowy mountainside." },
+  { image: "images/02-eye.jpeg", isAI: false, explain: "A real close-up portrait of an eye." },
+  { image: "images/03-porsche.png", isAI: false, explain: "A real photo of a classic Porsche splashing through slush." },
+  { image: "images/04-baby.jpeg", isAI: false, explain: "A real photo of a smiling baby." },
+  { image: "images/05-cat.webp", isAI: false, explain: "A real photo of a fluffy tabby cat." },
+  { image: "images/06-tetons.jpeg", isAI: false, explain: "A real photo of the Grand Teton mountains at sunrise." },
+  { image: "images/07-burger.jpeg", isAI: false, explain: "A real photo of a sesame-bun burger." },
+  { image: "images/08-latte.jpeg", isAI: false, explain: "A real photo of latte art." },
+  { image: "images/09-forest-man.jpeg", isAI: true, explain: "AI-generated — look closely at the tree branches and mist." },
+  { image: "images/10-pizza.jpeg", isAI: true, explain: "AI-generated — check the pizza's crust texture and shadows." },
+  { image: "images/11-carrots.jpeg", isAI: true, explain: "AI-generated — the water droplets are a bit too perfect." },
+  { image: "images/12-boat.jpeg", isAI: true, explain: "AI-generated — notice the odd reflections in the water." },
+  { image: "images/13-zhangjiajie.jpeg", isAI: true, explain: "AI-generated — the rock spires blend a little too smoothly." },
+  { image: "images/14-ocean.jpeg", isAI: true, explain: "AI-generated — the clouds and light don't quite add up." },
+  { image: "images/15-party.webp", isAI: true, explain: "AI-generated — check the hands and glasses for warping." },
+  { image: "images/16-smiling-man.jpeg", isAI: true, explain: "AI-generated — look at the skin texture and teeth." },
+  { image: "images/17-kookaburras.jpeg", isAI: true, explain: "AI-generated — the birds' feet and poses look a bit off." },
+  { image: "images/18-mercedes.jpeg", isAI: true, explain: "AI-generated — the badge and reflections give it away." },
+  { image: "images/19-london.jpg", isAI: true, explain: "AI-generated — check the crowd's faces and hands." },
+  { image: "images/20-green-shirt-man.jpeg", isAI: true, explain: "AI-generated — the glasses and skin are a little too smooth." }
+];
+
+let deck = [];
+let pos = 0;
+let score = 0;
+let streak = 0;
+let results = []; // 'correct' | 'wrong' | null per card index
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function buildProgress(){
+  const p = document.getElementById('progress');
+  p.innerHTML = '';
+  deck.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    d.id = 'dot' + i;
+    p.appendChild(d);
+  });
+}
+
+function updateProgressDot(i){
+  const d = document.getElementById('dot' + i);
+  if(!d) return;
+  d.classList.remove('done-real','done-ai','done-wrong','current');
+  const r = results[i];
+  if(r === 'correct') d.classList.add(deck[i].isAI ? 'done-ai' : 'done-real');
+  else if(r === 'wrong') d.classList.add('done-wrong');
+  if(i === pos) d.classList.add('current');
+}
+
+function refreshAllDots(){
+  deck.forEach((_, i) => updateProgressDot(i));
+}
+
+function loadCard(){
+  const card = deck[pos];
+  const cardEl = document.getElementById('cardEl');
+  cardEl.classList.remove('flipped');
+
+  document.getElementById('cardNum').textContent = '#' + (pos+1);
+  document.getElementById('cardImg').src = card.image;
+  document.getElementById('posLabel').textContent = pos + 1;
+  document.getElementById('totalLabel').textContent = deck.length;
+
+  const backClass = card.isAI ? 'is-ai' : 'is-real';
+  const backFace = document.getElementById('backFace');
+  backFace.className = 'face face-back ' + backClass;
+  document.getElementById('verdictText').textContent = card.isAI ? 'AI GENERATED' : 'REAL PHOTO';
+
+  const answered = !!results[pos];
+  const realBtn = document.getElementById('realBtn');
+  const aiBtn = document.getElementById('aiBtn');
+  realBtn.disabled = answered;
+  aiBtn.disabled = answered;
+
+  const flag = document.getElementById('resultFlag');
+  if(answered){
+    flag.textContent = results[pos] === 'correct' ? 'CORRECT!' : 'MISSED IT';
+    flag.className = 'result-flag ' + (results[pos] === 'correct' ? 'correct' : 'incorrect');
+    flag.style.display = 'inline-block';
+  } else {
+    flag.style.display = 'none';
+  }
+
+  document.getElementById('explainText').textContent = card.explain;
+  document.getElementById('navMid').textContent = answered ? 'TAP CARD TO REVIEW' : 'GUESS TO FLIP';
+
+  document.getElementById('prevBtn').disabled = pos === 0;
+  document.getElementById('nextBtn').disabled = pos === deck.length - 1;
+
+  refreshAllDots();
+  updateHud();
+}
+
+function updateHud(){
+  document.getElementById('score').textContent = score;
+  document.getElementById('streak').textContent = streak;
+}
+
+function submitGuess(guessedAI){
+  if(results[pos]) return; // already answered
+  const card = deck[pos];
+  const correct = guessedAI === card.isAI;
+  results[pos] = correct ? 'correct' : 'wrong';
+
+  if(correct){ score++; streak++; }
+  else { streak = 0; }
+
+  document.getElementById('cardEl').classList.add('flipped');
+  document.getElementById('realBtn').disabled = true;
+  document.getElementById('aiBtn').disabled = true;
+
+  const flag = document.getElementById('resultFlag');
+  flag.textContent = correct ? 'CORRECT!' : 'MISSED IT';
+  flag.className = 'result-flag ' + (correct ? 'correct' : 'incorrect');
+  flag.style.display = 'inline-block';
+  document.getElementById('navMid').textContent = 'TAP CARD TO REVIEW';
+
+  updateHud();
+  refreshAllDots();
+}
+
+document.getElementById('realBtn').addEventListener('click', () => submitGuess(false));
+document.getElementById('aiBtn').addEventListener('click', () => submitGuess(true));
+
+document.getElementById('cardEl').addEventListener('click', (e) => {
+  if(e.target.closest('.pick-btn')) return;
+  if(results[pos]){
+    document.getElementById('cardEl').classList.toggle('flipped');
+  }
+});
+
+document.getElementById('prevBtn').addEventListener('click', () => {
+  if(pos > 0){ pos--; loadCard(); }
+});
+document.getElementById('nextBtn').addEventListener('click', () => {
+  if(pos < deck.length - 1){ pos++; loadCard(); }
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => startGame(false));
+document.getElementById('shuffleBtn').addEventListener('click', () => startGame(true));
+
+function startGame(doShuffle){
+  deck = doShuffle ? shuffle(CARDS) : CARDS.slice();
+  pos = 0;
+  score = 0;
+  streak = 0;
+  results = new Array(deck.length).fill(null);
+  buildProgress();
+  loadCard();
+}
+
+startGame(true);
+</script>
+
+</body>
+</html>
