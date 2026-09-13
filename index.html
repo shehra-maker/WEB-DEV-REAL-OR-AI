@@ -359,48 +359,35 @@
   <button class="action" id="shuffleBtn">SHUFFLE</button>
 </div>
 
-<footer>
-  Placeholder art ships in this build. Open the file and edit the
-  <code>CARDS</code> array at the bottom to drop in your own 20 images —
-  set <code>isAI: true</code> or <code>isAI: false</code> for each one.
-</footer>
-
 <script>
-// ---------------------------------------------------------------
-// CARDS: replace image + isAI + explain for each of the 20 entries.
-// image: any hotlinked URL, or a local path like "images/card1.jpg"
-//        if you host images next to this HTML file.
-// isAI: true = AI-generated image, false = real photo.
-// explain: short line shown on the back of the card.
-// ---------------------------------------------------------------
 const CARDS = [
-  { image: "images/01-snowman.jpeg", isAI: false, explain: "A real snowman photographed on a snowy mountainside." },
-  { image: "images/02-eye.jpeg", isAI: false, explain: "A real close-up portrait of an eye." },
-  { image: "images/03-porsche.png", isAI: false, explain: "A real photo of a classic Porsche splashing through slush." },
-  { image: "images/04-baby.jpeg", isAI: false, explain: "A real photo of a smiling baby." },
-  { image: "images/05-cat.webp", isAI: false, explain: "A real photo of a fluffy tabby cat." },
-  { image: "images/06-tetons.jpeg", isAI: false, explain: "A real photo of the Grand Teton mountains at sunrise." },
-  { image: "images/07-burger.jpeg", isAI: false, explain: "A real photo of a sesame-bun burger." },
-  { image: "images/08-latte.jpeg", isAI: false, explain: "A real photo of latte art." },
-  { image: "images/09-forest-man.jpeg", isAI: true, explain: "AI-generated — look closely at the tree branches and mist." },
-  { image: "images/10-pizza.jpeg", isAI: true, explain: "AI-generated — check the pizza's crust texture and shadows." },
-  { image: "images/11-carrots.jpeg", isAI: true, explain: "AI-generated — the water droplets are a bit too perfect." },
-  { image: "images/12-boat.jpeg", isAI: true, explain: "AI-generated — notice the odd reflections in the water." },
-  { image: "images/13-zhangjiajie.jpeg", isAI: true, explain: "AI-generated — the rock spires blend a little too smoothly." },
-  { image: "images/14-ocean.jpeg", isAI: true, explain: "AI-generated — the clouds and light don't quite add up." },
-  { image: "images/15-party.webp", isAI: true, explain: "AI-generated — check the hands and glasses for warping." },
-  { image: "images/16-smiling-man.jpeg", isAI: true, explain: "AI-generated — look at the skin texture and teeth." },
-  { image: "images/17-kookaburras.jpeg", isAI: true, explain: "AI-generated — the birds' feet and poses look a bit off." },
-  { image: "images/18-mercedes.jpeg", isAI: true, explain: "AI-generated — the badge and reflections give it away." },
-  { image: "images/19-london.jpg", isAI: true, explain: "AI-generated — check the crowd's faces and hands." },
-  { image: "images/20-green-shirt-man.jpeg", isAI: true, explain: "AI-generated — the glasses and skin are a little too smooth." }
+  { image: "01-snowman.jpeg", isAI: false, explain: "A real snowman photographed on a snowy mountainside." },
+  { image: "02-eye.jpeg", isAI: false, explain: "A real close-up portrait of an eye." },
+  { image: "03-porsche.png", isAI: false, explain: "A real photo of a classic Porsche splashing through slush." },
+  { image: "04-baby.jpeg", isAI: false, explain: "A real photo of a smiling baby." },
+  { image: "05-cat.webp", isAI: false, explain: "A real photo of a fluffy tabby cat." },
+  { image: "06-tetons.jpeg", isAI: false, explain: "A real photo of the Grand Teton mountains at sunrise." },
+  { image: "07-burger.jpeg", isAI: false, explain: "A real photo of a sesame-bun burger." },
+  { image: "08-latte.jpeg", isAI: false, explain: "A real photo of latte art." },
+  { image: "09-forest-man.jpeg", isAI: true, explain: "AI-generated — look closely at the tree branches and mist." },
+  { image: "10-pizza.jpeg", isAI: true, explain: "AI-generated — check the pizza's crust texture and shadows." },
+  { image: "11-carrots.jpeg", isAI: true, explain: "AI-generated — the water droplets are a bit too perfect." },
+  { image: "12-boat.jpeg", isAI: true, explain: "AI-generated — notice the odd reflections in the water." },
+  { image: "13-zhangjiajie.jpeg", isAI: true, explain: "AI-generated — the rock spires blend a little too smoothly." },
+  { image: "14-ocean.jpeg", isAI: true, explain: "AI-generated — the clouds and light don't quite add up." },
+  { image: "15-party.webp", isAI: true, explain: "AI-generated — check the hands and glasses for warping." },
+  { image: "16-smiling-man.jpeg", isAI: true, explain: "AI-generated — look at the skin texture and teeth." },
+  { image: "17-kookaburras.jpeg", isAI: true, explain: "AI-generated — the birds' feet and poses look a bit off." },
+  { image: "18-mercedes.jpeg", isAI: true, explain: "AI-generated — the badge and reflections give it away." },
+  { image: "19-london.jpg", isAI: true, explain: "AI-generated — check the crowd's faces and hands." },
+  { image: "20-green-shirt-man.jpeg", isAI: true, explain: "AI-generated — the glasses and skin are a little too smooth." }
 ];
 
 let deck = [];
 let pos = 0;
 let score = 0;
 let streak = 0;
-let results = []; // 'correct' | 'wrong' | null per card index
+let results = [];
 
 function shuffle(arr){
   const a = arr.slice();
@@ -482,7 +469,7 @@ function updateHud(){
 }
 
 function submitGuess(guessedAI){
-  if(results[pos]) return; // already answered
+  if(results[pos]) return;
   const card = deck[pos];
   const correct = guessedAI === card.isAI;
   results[pos] = correct ? 'correct' : 'wrong';
